@@ -1,14 +1,16 @@
 # imports
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import SGDRegressor
 from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 import sklearn.metrics as metrics
 
+import seaborn as sns
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -52,7 +54,7 @@ class Modelpredict:
     def split(self, df, target_feature, test_size):
         X = df.drop([target_feature], axis=1)
         y = df[target_feature]
-        X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size = test_size, random_state = 42)
+        X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size = test_size, random_state = 21)
         return X_train, X_test, Y_train, Y_test;
         
         
@@ -91,6 +93,7 @@ class Modelpredict:
         # Evaluate the model
         Y_pred = pipeline.predict(X_test)
         
+        # display metrics relavent to the model's performance
         print('Pipeline Linear Regression Coef')
         cdf = pd.DataFrame(pipeline.named_steps['Linear Regression'].coef_, X_train.columns, columns=['Coeff'])
         display(cdf)
@@ -98,17 +101,70 @@ class Modelpredict:
         print('Pipeline Mean Absolute Error: ', mean_absolute_error(Y_pred, Y_test))
         print('Pipeline Score', pipeline.score(X_test, Y_test))
         
+        # get a df with the actual vs predicted values        
+        result = self.make_results_df(Y_pred, Y_test)
+        display(result.head(10))
+        
+        # plot a scatter plot with the actual vs predicted values          
+        self.plot_scatter(Y_pred, Y_test, feature)
+        
+        # plot kde plot for actual and predicted values
+        self.plot_kde( Y_pred, Y_test)
         
         return Y_pred, Y_test
         
         
-        #Random forest model
-            #again do research and see about different models of this family
+    #Random forest model
+    def random_forest(self, df, feature, test_size):
+
+        # Split into a training and testing set
+        X_train, X_test, Y_train, Y_test = self.split(df, feature, test_size)
+
+        # Define the pipeline for scaling and model fitting
+        pipeline = Pipeline([
+            ("StandardScaler", StandardScaler()),
+            ("MinMaxScaler", MinMaxScaler()),
+            ('clf', RandomForestRegressor())
+        ])
         
-        #k-nearest neighbors 
+        # Declare a hyperparameter grid
+        param_grid = {
+            "clf__n_estimators": [100, 400, 1200],
+            "clf__max_depth": [10, 40, 120, None],
+            "clf__max_features": ['auto', 'sqrt'],
+            "clf__bootstrap": [True, False],
+            "clf__min_samples_leaf": [1, 2],
+            "clf__min_samples_split": [2, 5],
+        }
+
+        # Perform grid search, fit it, and print score
+        gs = GridSearchCV(pipeline, param_grid=param_grid, cv=3, n_jobs=-1, verbose=1000)
         
-        #Time series prediction models
-        #Do some proper research
+        gs.fit(X_train, Y_train)
+
+        # Evaluate the model
+        best_random = gs.best_estimator_
+        
+        Y_pred = best_random.predict(X_test)
+        
+        # display metrics relavent to the model's performance
+        print('Pipeline Best params:\n', gs.best_params_)
+        
+        print('Pipeline Mean Squered Error: ', mean_squared_error(Y_pred, Y_test))
+        print('Pipeline Mean Absolute Error: ', mean_absolute_error(Y_pred, Y_test))
+        print('Pipeline Score', gs.score(X_test, Y_test))
+        
+        # get a df with the actual vs predicted values        
+        result = self.make_results_df(Y_pred, Y_test)
+        display(result.head(10))
+        
+        # plot a scatter plot with the actual vs predicted values          
+        self.plot_scatter(Y_pred, Y_test, feature)
+        
+        # plot kde plot for actual and predicted values
+        self.plot_kde( Y_pred, Y_test)
+        
+        return Y_pred, Y_test
         
     
     #methods to take the outcome of the modeling related methods and produce some visual representation of the performance of the model
@@ -116,13 +172,23 @@ class Modelpredict:
     def make_results_df(self, Y_pred, Y_test):
         result = pd.DataFrame({'Actual': Y_test, 'Predicted': Y_pred})
         return result
-    
-    def plot_y_test_train(self, Y_pred, Y_test):
-        plt.figure(figsize=(10, 5))
-        plt.plot(np.linspace(0, len(Y_pred), len(Y_pred)), Y_pred, label = "Forecast Value")
-        plt.plot(np.linspace(0, len(Y_pred), len(Y_pred)), Y_test, label = "Actual Value")
-        plt.legend()
+
+    def plot_scatter(self, Y_pred, Y_test, feature):
+        plt.figure(figsize=(16, 12))
+        plt.xlabel(feature, fontsize=18)
+        plt.ylabel(feature, fontsize=18)
+        plt.scatter(Y_test, Y_pred, label="PREDICTED VALUE")
+        plt.scatter(Y_test, Y_test, label="ACTUAL VALUE")
+        plt.legend(prop={'size': 14})
         plt.show()
+        
+    def plot_kde(self, Y_pred, Y_test):    
+        plt.figure(figsize=(14, 11))
+        sns.set(font_scale = 2)
+        sns.kdeplot(Y_pred)
+        sns.kdeplot(Y_test)
+        plt.legend(labels=["Predicted Value", "Actual Value"], prop={'size': 16})
+        
         
     #Potential comparison method to show how all our models performed
     
