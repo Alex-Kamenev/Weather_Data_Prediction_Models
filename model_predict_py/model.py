@@ -1,6 +1,3 @@
-%load_ext autoreload
-%autoreload 2
-
 # imports
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.pipeline import Pipeline
@@ -192,7 +189,7 @@ class Modelpredict:
         sns.kdeplot(Y_test)
         plt.legend(labels=["Predicted Value", "Actual Value"], prop={'size': 16})
         
-    def ts_plot_outcome(data_train, data_test, predictions, feature, steps):
+    def ts_plot_outcome(self, data_train, data_test, predictions, feature, steps):
         # Plot
 
         fig, ax = plt.subplots(figsize=(20, 10))
