@@ -1,3 +1,6 @@
+%load_ext autoreload
+%autoreload 2
+
 # imports
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.pipeline import Pipeline
@@ -189,7 +192,32 @@ class Modelpredict:
         sns.kdeplot(Y_test)
         plt.legend(labels=["Predicted Value", "Actual Value"], prop={'size': 16})
         
+    def ts_plot_outcome(data_train, data_test, predictions, feature, steps):
+        # Plot
+
+        fig, ax = plt.subplots(figsize=(20, 10))
+        data_train[feature].plot(ax=ax, label='train')
+        data_test[feature].plot(ax=ax, label='test', color="darkorange")
+        predictions.plot(ax=ax, label='predictions', color="forestgreen")
+        plt.title("The Whole Set")
+        ax.legend();
+
+        fig, ax = plt.subplots(figsize=(20, 10))
+        data_train.iloc[-steps:][feature].plot(ax=ax, label='train')
+        data_test[feature].plot(ax=ax, label='test', color="darkorange")
+        predictions.plot(ax=ax, label='predictions', color="forestgreen")
+        plt.title("The Last {} Records of Train and All of Test".format(steps))
+        ax.legend();
+
+        fig, ax = plt.subplots(figsize=(20, 10))
+        data_test[feature].plot(ax=ax, label='test', color="darkorange")
+        predictions.plot(ax=ax, label='predictions', color="forestgreen")
+        plt.title("Test Only")
+        ax.legend();
         
+        # Test error
+        error_mse = mean_squared_error(y_true = data_test[feature], y_pred = predictions)
+        display(f"Test error (mse): {error_mse}")
     #Potential comparison method to show how all our models performed
     
     
