@@ -36,6 +36,10 @@ class DataInfo:
     def notnull(self):
         return self._df.notnull().sum()
     
+    def drop(self, df, features):
+        df = df.drop(features, axis=1)
+        return df
+    
     def show_missing(self, *argv):
         for arg in argv:
             print("\nFeature name:", arg)
