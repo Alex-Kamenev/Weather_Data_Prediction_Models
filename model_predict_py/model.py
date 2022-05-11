@@ -15,7 +15,16 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+import pandas as pd
 
+from sklearn.impute import SimpleImputer
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
+
+from skforecast.ForecasterAutoreg import ForecasterAutoreg
+from skforecast.model_selection import grid_search_forecaster
+
+import edapy.datainfo as d_info
 
 class Modelpredict:
     #define class variables
@@ -216,6 +225,94 @@ class Modelpredict:
         error_mse = mean_squared_error(y_true = data_test[feature], y_pred = predictions)
         display(f"Test error (mse): {error_mse}")
     #Potential comparison method to show how all our models performed
+    
+    #time series
+    def time_series_prep_df(self, df):
+        # instantiate custom package class for eda 
+        dt = d_info.DataInfo(df)
+
+        # trim the df
+        data = dt.drop(df, ['STATION', 'id', 'SUM_TAVG', 'NAME', 'YEAR', 'MONTH', 'DAY', 'DAYS_SINCE_JAN_1'])
+
+        # pop the column 
+        first_column = data.pop('DATE')
+
+        # insert at first position 
+        data.insert(0, 'DATE', first_column)
+
+        # Convert to datetime
+        data['DATE'] = pd.to_datetime(data['DATE'], format='%Y/%m/%d')
+
+        # Set as index
+        data = data.set_index('DATE')
+
+        # Convert TimeSeries to specified frequency
+        data = data.asfreq('D')
+
+        # sort
+        data = data.sort_index()
+
+        # Split data into train-test
+
+        steps = 366
+        data_train = data[:-steps]
+        data_test  = data[-steps:]
+
+        print(f"Train dates : {data_train.index.min()} --- {data_train.index.max()}  (n={len(data_train)})")
+        print(f"Test dates  : {data_test.index.min()} --- {data_test.index.max()}  (n={len(data_test)})")
+
+        fig, ax=plt.subplots(figsize=(20, 10))
+        data_train['TAVG'].plot(ax=ax, label='train')
+        data_test['TAVG'].plot(ax=ax, label='test')
+        ax.legend();
+
+        # Hyperparameter Grid search
+
+        steps = 366
+        forecaster = ForecasterAutoreg(
+                        regressor = RandomForestRegressor(random_state=123),
+                        lags      = 12 # This value will be replaced in the grid search
+                     )
+
+        # Lags used as predictors
+        lags_grid = [10, 20]
+
+        # Regressor's hyperparameters
+        param_grid = {'n_estimators': [ 600, 800, 1000],
+                      'max_depth': [30, 40, 50],
+                      'bootstrap': [True, False],
+                      'min_samples_leaf': [1],
+                      'min_samples_split': [2],
+                     }
+
+        results_grid = grid_search_forecaster(
+                                forecaster         = forecaster,
+                                y                  = data_train['TAVG'],
+                                param_grid         = param_grid,
+                                lags_grid          = lags_grid,
+                                steps              = steps,
+                                refit              = True,
+                                metric             = 'mean_squared_error',
+                                initial_train_size = int(len(data_train)*0.5),
+                                fixed_train_size   = False,
+                                return_best        = True,
+                                verbose            = False
+                       )
+
+        # Grid Search results
+        results_grid
+
+        # Predictions
+        predictions = forecaster.predict(steps = steps)
+
+        # Results of prediction 
+        self.ts_plot_outcome(data_train, data_test, predictions, 'TAVG', 366)
+
+
+        
+        
+        
+
     
     
     
