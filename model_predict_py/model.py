@@ -59,7 +59,7 @@ class Modelpredict:
         return df
     
     #methods to split the dataset for x and y and train and test
-        #allow for inputs on the spliut details in the methd call itself
+        #allow for inputs on the split details in the method call itself
     def split(self, df, target_feature, test_size):
         X = df.drop([target_feature], axis=1)
         y = df[target_feature]
@@ -224,6 +224,8 @@ class Modelpredict:
         # Test error
         error_mse = mean_squared_error(y_true = data_test[feature], y_pred = predictions)
         display(f"Test error (mse): {error_mse}")
+        
+        
     #Potential comparison method to show how all our models performed
     
     #time series
@@ -300,7 +302,7 @@ class Modelpredict:
                        )
 
         # Grid Search results
-        results_grid
+        print(results_grid)
 
         # Predictions
         predictions = forecaster.predict(steps = steps)
