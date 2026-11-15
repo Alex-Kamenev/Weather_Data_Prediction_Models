@@ -52,16 +52,16 @@ def plot_heat_map_per_feature(df, type_of_corr):
         plt.figure(i)
         dims = (10, 8)
         fig, ax = plt.subplots(figsize=dims)
-        sns.heatmap(ax = ax, data = df.corr(type_of_corr).abs()[[col]].sort_values(col))
+        sns.heatmap(ax = ax, data = df.corr(method=type_of_corr, numeric_only=True).abs()[[col]].sort_values(col))
     return
 
 def heat_map(df):
     plt.figure(figsize=(32,28))
     cmap = sns.diverging_palette(309, 10, 30, center="light", as_cmap=True)
     sns.set(font_scale = 1.7)
-    mask = np.zeros_like(df.corr())
+    mask = np.zeros_like(df.corr(numeric_only=True))
     mask[np.triu_indices_from(mask)] = True
-    sns.heatmap(df.corr(), mask=mask, linewidths=.1 ,cmap=cmap, annot=True)
+    sns.heatmap(df.corr(numeric_only=True), mask=mask, linewidths=.1 ,cmap=cmap, annot=True)
     plt.yticks(rotation=0);
     return
 
