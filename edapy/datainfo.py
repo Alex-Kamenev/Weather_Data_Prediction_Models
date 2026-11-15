@@ -87,17 +87,17 @@ class DataInfo:
         for feature in list_of_features:
             for date in self._df.loc[self._df[feature].isnull(), 'DATE']:
                 present = self._df.loc[(self._df[feature].notnull()) & (self._df['DATE'] == date), feature]
-                new_value = present.sum() / present.count()
+                new_value = present.mean()
                 self._df.loc[(self._df[feature].isnull()) & (self._df['DATE'] == date), feature] = new_value
         return
     
-    def half_sum_fill_in_missing(self, *argv):
-        for arg in argv:
-            for date in self._df.loc[self._df[arg].isnull(), 'DATE']:
-                self._df.loc[self._df['DATE'] == date, "TAVG"] = ((self._df.loc[self._df['DATE'] == date, "TMIN"] +
-                                                  self._df.loc[self._df['DATE'] == date, "TMAX"]) / 2)
-        return
-    
+    def half_sum_fill_in_missing(self, *features):
+        """Fill only missing values with the same row's minimum/maximum midpoint."""
+        midpoint = (self._df['TMIN'] + self._df['TMAX']) / 2
+        for feature in features:
+            missing = self._df[feature].isna()
+            self._df.loc[missing, feature] = midpoint.loc[missing]
+
     def group_by(self, feature):
         groups = self._df.groupby([feature])
         list_of_groups = list(groups)

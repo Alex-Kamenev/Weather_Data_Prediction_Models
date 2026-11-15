@@ -14,15 +14,13 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from IPython.display import display
 
 import pandas as pd
 
 from sklearn.impute import SimpleImputer
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
-
-from skforecast.ForecasterAutoreg import ForecasterAutoreg
-from skforecast.model_selection import grid_search_forecaster
 
 import edapy.datainfo as d_info
 
@@ -48,15 +46,8 @@ class Modelpredict:
     #feature selection methods - will probably have to search for a good lib for this task and use it 
     #one such lib is Boruta
     def one_hot_encode(self, df, feature):
-        dummy_gender = pd.get_dummies(df[feature], prefix=feature+'_')
-        df = pd.merge(
-        left=df,
-        right=dummy_gender,
-        left_index=True,
-        right_index=True,
-        )
-        df.drop([feature], axis=1, inplace=True)
-        return df
+        dummy_values = pd.get_dummies(df[feature], prefix=feature+'_')
+        return pd.concat([df.drop(columns=[feature]), dummy_values], axis=1)
     
     #methods to split the dataset for x and y and train and test
         #allow for inputs on the split details in the method call itself
@@ -140,7 +131,7 @@ class Modelpredict:
         param_grid = {
             "clf__n_estimators": [100, 400, 1200],
             "clf__max_depth": [10, 40, 120, None],
-            "clf__max_features": ['auto', 'sqrt'],
+            "clf__max_features": [1.0, 'sqrt'],
             "clf__bootstrap": [True, False],
             "clf__min_samples_leaf": [1, 2],
             "clf__min_samples_split": [2, 5],
@@ -230,6 +221,10 @@ class Modelpredict:
     
     #time series
     def time_series_prep_df(self, df):
+        # Optional legacy forecasting dependency; ordinary regression does not need it.
+        from skforecast.ForecasterAutoreg import ForecasterAutoreg
+        from skforecast.model_selection import grid_search_forecaster
+
         # instantiate custom package class for eda 
         dt = d_info.DataInfo(df)
 
@@ -309,24 +304,3 @@ class Modelpredict:
 
         # Results of prediction 
         self.ts_plot_outcome(data_train, data_test, predictions, 'TAVG', 366)
-
-
-        
-        
-        
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    

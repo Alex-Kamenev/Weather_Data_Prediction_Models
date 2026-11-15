@@ -1,0 +1,6 @@
+-r requirements.txt
+# Historical ForecasterAutoreg/grid_search_forecaster API used by the time-series notebook.
+skforecast==0.13.0
+numpy<2
+pandas<3
+scikit-learn<1.6
